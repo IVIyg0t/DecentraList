@@ -1,47 +1,60 @@
-const { assert } = require("chai")
+const { assert } = require("chai");
 
-const TodoList = artifacts.require("./TodoList.sol")
+const TodoList = artifacts.require("./TodoList.sol");
 
-contract('TodoList', (accounts) => {
-    before(async () => {
-        this.todoList = await TodoList.deployed()
-    })
+contract("TodoList", (accounts) => {
+  before(async () => {
+    this.todoList = await TodoList.deployed();
+  });
 
-    it('deploys successfully', async () => {
-        const address = await this.todoList.address;
+  it("deploys successfully", async () => {
+    const address = await this.todoList.address;
 
-        assert.notEqual(address, 0x0);
-        assert.notEqual(address, '');
-        assert.notEqual(address, null);
-        assert.notEqual(address, undefined);
-    })
+    assert.notEqual(address, 0x0);
+    assert.notEqual(address, "");
+    assert.notEqual(address, null);
+    assert.notEqual(address, undefined);
+  });
 
-    it('lists tasks', async () => {
-        const taskCount = await this.todoList.taskCount();
-        const task = await this.todoList.tasks(taskCount);
+  it("lists tasks", async () => {
+    const taskCount = await this.todoList.getOwnerTaskCount();
+    assert.equal(taskCount.toNumber(), 0);
 
-        assert.equal(task.id.toNumber(), taskCount.toNumber());
-        assert.equal(task.content, "Check out this shiitt");
-        assert.equal(task.completed, false);
-        assert.equal(taskCount.toNumber(), 1);
-    })
+    const tasks = await this.todoList.getOwnerTasks();
+    assert.isEmpty(tasks);
+  });
 
-    it('creates tasks', async () => {
-        const result = await this.todoList.createTask('A new task');
-        const taskCount = await this.todoList.taskCount();
-        assert.equal(taskCount, 2);
-        const event = result.logs[0].args;
-        assert.equal(event.id.toNumber(), 2);
-        assert.equal(event.content, 'A new task');
-        assert.equal(event.completed, false);
-    })
+  it("creates tasks", async () => {
+    const result = await this.todoList.createTask("test");
+    assert.exists(result);
 
-    it('toggles task completion', async () => {
-        const result = await this.todoList.toggleCompleted(1);
-        const task = await this.todoList.tasks(1)
-        assert.equal(task.completed, true);
-        const event = result.logs[0].args;
-        assert.equal(event.id.toNumber(), 1)
-        assert.equal(event.completed, true);
-    })
-})
+    const event = result.logs[0];
+    assert.equal(event.event, "TaskCreated");
+
+    const taskCount = await this.todoList.getOwnerTaskCount();
+    assert.equal(taskCount, 1);
+
+    const tasks = await this.todoList.getOwnerTasks();
+    assert.isArray(tasks);
+
+    const task = tasks[0];
+    assert.equal(task.id, 0);
+    assert.equal(task.content, "test");
+    assert.isFalse(task.completed);
+  });
+
+  it("toggles task completion", async () => {
+    const newTask = await this.todoList.createTask("test");
+    assert.exists(newTask);
+
+    const result = await this.todoList.toggleCompleted(0);
+    assert.exists(result);
+
+    const event = result.logs[0];
+    assert.equal(event.event, "TaskCompleted");
+
+    const task = await this.todoList.tasks(0);
+    assert.exists(task);
+    assert.isTrue(task.completed);
+  });
+});

@@ -146,3 +146,9 @@ With the web UI running, head over to `http://localhost:3000`.
 - Select your test account to connect with
 
 After connecting MetaMask you should now see ~100ETH and a sub-string of your Address!
+
+# Remix GUI
+
+You can optionally edit and deploy your contract via Remix
+
+`npm install -g @remix-project/remixd`
